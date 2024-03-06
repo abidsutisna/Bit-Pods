@@ -14,12 +14,17 @@ import bytebrewers.bitpod.utils.swagger.portfolio.SwaggerPortfolioIndex;
 import bytebrewers.bitpod.utils.swagger.portfolio.SwaggerPortfolioShow;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import net.sf.jasperreports.engine.JasperExportManager;
+import net.sf.jasperreports.engine.JasperPrint;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -30,6 +35,8 @@ import org.springframework.web.bind.annotation.*;
 @Tag(name = "Portfolio", description = "Portfolio API")
 public class PortfolioController {
     private final PortfolioService portfolioService;
+
+    private final HttpServletResponse response;
 
     @SwaggerPortfolioIndex
     @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN')")
@@ -56,5 +63,14 @@ public class PortfolioController {
     public ResponseEntity<?> showByCurrentUser(@RequestHeader(name = "Authorization") String token) {
         Portfolio portfolio = portfolioService.currentUser(token);
         return Res.renderJson(portfolio, Messages.PORTFOLIO_FOUND, HttpStatus.OK);
+    }
+
+    @GetMapping("/export/{id}")
+    public ResponseEntity<?> exportPortfolio (@PathVariable String id) throws Exception{
+        // response.setContentType("application/pdf");
+        // response.setHeader("Content-Disposition", "attachment; filneame=\"portfolio.pdf\"");
+        // JasperPrint jasperPrint = portfolioService.generateReport("8ca013b8-2a23-4d5d-9557-a6ef527638bb");
+        // JasperExportManager.exportReportToPdfFile(jasperPrint, "C:\\Users\\M_S_I\\Downloads\\portfolio.pdf");
+        return Res.renderJson(portfolioService.generateReport(id), "download success", HttpStatus.OK);
     }
 }

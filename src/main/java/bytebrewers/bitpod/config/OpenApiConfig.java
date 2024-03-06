@@ -18,6 +18,10 @@ import io.swagger.v3.oas.annotations.servers.Server;
         @Server(
             description = "path url",
             url = "http://108.137.54.68:8080"
+        ),
+        @Server(
+            description = "local url",
+            url = "http://localhost:8080"
         )
     },
     security = {

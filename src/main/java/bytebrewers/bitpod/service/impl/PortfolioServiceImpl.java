@@ -20,6 +20,13 @@ import bytebrewers.bitpod.utils.specification.GeneralSpecification;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import net.sf.jasperreports.engine.JasperExportManager;
+import net.sf.jasperreports.engine.JasperFillManager;
+import net.sf.jasperreports.engine.JasperPrint;
+import net.sf.jasperreports.engine.JasperReport;
+import net.sf.jasperreports.engine.util.JRLoader;
+
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -27,10 +34,18 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.io.InputStream;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+
+
+import javax.sql.DataSource;
 
 @Service
 @RequiredArgsConstructor
@@ -40,6 +55,7 @@ public class PortfolioServiceImpl implements PortfolioService {
     private final JwtUtils jwt;
     private final UserService userService;
     private final StockService stockService;
+    private final DataSource dataSource;
     @Override
     public Page<Portfolio> getAll(Pageable pageable, PortfolioDTO portfolioDTO) {
         Specification<Portfolio> specification = GeneralSpecification.getSpecification(portfolioDTO);
@@ -109,5 +125,43 @@ public class PortfolioServiceImpl implements PortfolioService {
     private BigDecimal calculatePercentGain(BigDecimal latestValue, BigDecimal currentValue) {
         return currentValue.subtract(latestValue).divide(latestValue, 2, RoundingMode.HALF_UP)
                 .multiply(BigDecimal.valueOf(100));
+    }
+    // @Override
+    // public JasperPrint generateReport(String id) throws Exception {
+    //     User user = userService.findUserById(id);
+    //     String email = user.getEmail();
+
+    //     Map<String, Object> params = new HashMap<String, Object>();
+    //     params.put("Name_param", email);
+        
+    //     InputStream fileReport = new ClassPathResource("report/Invoice.jasper").getInputStream();
+
+    //     JasperReport jasperReport = (JasperReport) JRLoader.loadObject(fileReport);
+    //     JasperPrint jasperPrint = JasperFillManager.fillReport(jasperReport, params, getJdbcConnection());
+    //     return jasperPrint;
+    // }
+
+    @Override
+    public String generateReport(String id) throws Exception {
+        User user = userService.findUserById(id);
+        String email = user.getEmail();
+        Map<String, Object> params = new HashMap<String, Object>();
+        params.put("Name_param", email);
+        
+        InputStream fileReport = new ClassPathResource("report/Invoice.jasper").getInputStream();
+        log.info(fileReport.toString());
+        JasperReport jasperReport = (JasperReport) JRLoader.loadObject(fileReport);
+        log.info(jasperReport.toString());
+        JasperPrint jasperPrint = JasperFillManager.fillReport(jasperReport, params, getJdbcConnection());
+        JasperExportManager.exportReportToPdfFile(jasperPrint, "C:\\Users\\M_S_I\\Downloads\\portfolio.pdf");
+        return "report generated in path : C:/Users/M_S_I/Downloads/";
+    }
+
+    private Connection getJdbcConnection() {
+        try {
+            return dataSource.getConnection();
+        } catch (SQLException e) {
+            return null;
+        }
     }
 }
